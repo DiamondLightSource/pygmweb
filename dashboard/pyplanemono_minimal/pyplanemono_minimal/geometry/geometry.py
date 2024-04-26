@@ -11,7 +11,6 @@ Date: 2023-09-15
 """
 from __future__ import division, print_function
 import numpy as np
-from colorama import Fore
 
 class Ray3D(object):
     """
@@ -519,7 +518,7 @@ class Plane(object):
             else:
                 raise ValueError("The plane and ray are parallel")    
         # return type is different to return type from if and elif above
-        print(Fore.RED + 'Not handled!' + Fore.RESET)
+        print('Not handled!')
 
 
 

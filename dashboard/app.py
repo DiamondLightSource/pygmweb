@@ -1,14 +1,10 @@
 import seaborn as sns
 from faicons import icon_svg
 import matplotlib.pyplot as plt
-# Import data from shared.py
-import micropip
-micropip.install("https://github.com/patrickwang27/pgmcomponents/releases/download/1.0/pgmcomponents-1.0-py3-none-any.whl")
-from shared import app_dir, df
 from pathlib import Path
 from shiny import App, reactive, render, ui
 app_dir = Path(__file__).parent
-from pgmcomponents.elements import *
+from pyplanemono_minimal.elements import *
 app_ui = ui.page_sidebar(
     ui.sidebar(
         ui.accordion(

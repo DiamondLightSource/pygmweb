@@ -3,10 +3,10 @@ from matplotlib.axes import Axes
 import numpy as np
 from matplotlib.patches import Patch 
 import configparser
-from pgmcomponents.geometry import Point3D, Ray3D
+from pyplanemono_minimal.geometry import Point3D, Ray3D
 from scipy.spatial import ConvexHull
 from matplotlib.lines import Line2D
-from pgmcomponents.elements import Plane_Mirror, Grating
+from pyplanemono_minimal.elements import Plane_Mirror, Grating
 
 class PGM(object):
     """

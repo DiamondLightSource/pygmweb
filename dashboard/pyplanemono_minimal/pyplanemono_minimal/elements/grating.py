@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 import configparser
-from pgmcomponents.geometry import Point3D, Plane, Ray3D
+from pyplanemono_minimal.geometry import Point3D, Plane, Ray3D
 from scipy.constants import c, h, e
 
 

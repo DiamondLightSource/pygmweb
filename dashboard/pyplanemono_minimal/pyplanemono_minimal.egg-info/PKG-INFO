@@ -1,0 +1,20 @@
+Metadata-Version: 2.1
+Name: pyplanemono_minimal
+Version: 1.0
+Summary: X-ray tracing for plane grating monochromator. Minimal version with no interface to SHADOW.
+Author-email: Patrick Wang <patrick.wang@diamond.ac.uk>
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8.0
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy>=1.23.0
+Requires-Dist: scipy>=1.8.1
+Requires-Dist: matplotlib>=3.5.2
+
+# pyplanemono-minimal
+
+This is a minimised version of the PyPlaneMono project, which is a calculation suite for the geometry of the plane grating monochromator. This repository contains only only the core calculation and visualisation functionalities and no GUI components
+and is not capable of interacting with SHADOW as a pre-processor. For full functionality, refer to pyplanemono. This is meant to be distributed with the online interface of the PyPlaneMono project with maximum portability.
+

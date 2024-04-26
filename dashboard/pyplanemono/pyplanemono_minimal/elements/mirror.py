@@ -3,7 +3,7 @@ from __future__ import annotations
 from ast import List
 from matplotlib.pyplot import isinteractive
 import numpy as np
-from pgmcomponents.geometry import Point3D, Vector3D, Plane, Ray3D
+from pyplanemono_minimal.geometry import Point3D, Vector3D, Plane, Ray3D
 import configparser
 
 class Plane_Mirror(object):
