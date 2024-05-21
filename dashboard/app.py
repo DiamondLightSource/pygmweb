@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from shiny import App, reactive, render, ui
 app_dir = Path(__file__).parent
-from pyplanemono_minimal.pyplanemono_minimal.elements import *
+from pyplanemono_minimal.elements import *
 from pyplanemono_minimal.geometry import calc_beam_size
 import plotly.express as px
 from shinywidgets import output_widget, render_widget, render_plotly
