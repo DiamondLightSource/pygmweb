@@ -1,5 +1,3 @@
 faicons
 shiny
-seaborn
-pandas
 pyplanemono_minimal
