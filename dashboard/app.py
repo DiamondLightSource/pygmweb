@@ -40,7 +40,7 @@ app_ui = ui.page_sidebar(
         ui.accordion(
             ui.accordion_panel(
                 "Beam Configurations",
-                ui.tooltip(ui.input_checkbox("calc_beam_height", "Calculate Beam Height Automatically", value=False),
+                ui.tooltip(ui.input_checkbox("calc_beam_height", "Calculate ID Beam Height", value=False),
                            'This calculates the vertical beam size at the grating and mirror from an undulator source for the given PGM energy.'),
                 ui.output_ui('beam_height_calc_ui'),
                 ui.input_numeric("beam_width","Beam Width (mm)",5,step=0.1,min=0, max=100),
@@ -68,10 +68,10 @@ app_ui = ui.page_sidebar(
         ui.accordion(
             ui.accordion_panel(
                 "Offsets Configurations",
-                ui.img(src='pgm.png'),
-                ui.input_numeric('beam_vertical_offset', "Beam Vertical Offset (mm) \(b\)" , -13, min=-100, max=100),
+                ui.img(src=f'{app_dir}/static/pgm.png'),
+                ui.input_numeric('beam_vertical_offset', "Beam Vertical Offset \(b\) (mm) " , -13, min=-100, max=100),
                 ui.input_numeric('mirror_horizontal_offset', "Mirror Horizontal Offset \(a\) (mm)", 0, min=-100, max=100),
-                ui.input_checkbox("calculate_offsets", "Calculate Offsets Automatically", value=True),
+                ui.input_checkbox("calculate_offsets", "Calculate Offsets Automatically", value=False),
                 ui.input_numeric('mirror_vertical_offset', "Mirror Vertical Offset \(c\) (mm)", 13, min=-100, max=100),
                 ui.input_numeric('mirror_axis_horizontal_offset', "Mirror Axis Horizontal Offset \(h\) (mm)", 0, min=-100, max=100),
                 ui.input_numeric('mirror_axis_vertical_offset', "Mirror Axis Vertical Offset \(v\) (mm)", 6.5, min=-100, max=100),
@@ -79,7 +79,7 @@ app_ui = ui.page_sidebar(
         title="PGM Configurations"),
     
 
-    ui.card(ui.card_header("Footprint View"),output_widget("top_view"),full_screen=True, fill=True),
+    ui.card(ui.card_header("Footprint View"),output_widget("top_view"),full_screen=True),
     ui.card(ui.card_header("Side View"),output_widget("side_view"),full_screen=True, fill=True),
 
     ui.include_css(app_dir / "styles.css"),
@@ -171,12 +171,13 @@ def server(input, output, session):
 
         fig = go.Figure(layout={'showlegend':False, 
                                 'xaxis':{'range':(min(mirror_corners[:,0])-50,max(grating_corners[:,0])+50)},
-                                'yaxis':{'range':(min(mirror_corners[:,1])-100,max(grating_corners[:,1])+50)}, 
+                                'yaxis':{'range':(min(mirror_corners[:,1])-50,max(grating_corners[:,1])+50)}, 
                                 'height':400})
         fig.add_trace(go.Scatter(x=mirror_corners[:,0], y=mirror_corners[:,1],fill='toself',fillcolor='red',line={"color":'red'}, marker={'size':0}, name='Mirror'))
         fig.add_trace(go.Scatter(x=grating_corners[:,0], y=grating_corners[:,1],fill='toself',fillcolor='blue',line={"color":'blue'}, marker={'size':0}, name='Grating'))
         fig.add_trace(go.Scatter(x=mirr_footprint_corners[:,0], y=mirr_footprint_corners[:,1],fill='toself',fillcolor='green',line={"color":'green'}, marker={'size':0}, name='Beam Footprint on Mirror'))
         fig.add_trace(go.Scatter(x=grating_footprint_corners[:,0], y=grating_footprint_corners[:,1],fill='toself',fillcolor='green',line={"color":'green'}, marker={'size':0}, name='Beam Footprint on Grating'))
+        fig.update_layout(xaxis_title="Z (mm)", yaxis_title="X (mm)")
         return fig
 
     @render_plotly
@@ -193,6 +194,20 @@ def server(input, output, session):
         else:
             pgm.beam_height = input.beam_height()
         
+        if input.calculate_offsets():
+            b = -1*float(input.beam_vertical_offset)
+            pgm.beam_offset = b
+            pgm.mirror.hoffset = float(input.mirror_horizontal_offset)
+            pgm.mirror.axis_voffset = b/2
+            pgm.mirror.voffset = b
+            pgm.mirror.axis_hoffset = 0
+        else:
+            pgm.beam_offset = float(input.beam_vertical_offset())
+            pgm.mirror.hoffset = float(input.mirror_horizontal_offset())
+            pgm.mirror.axis_voffset = float(input.mirror_axis_vertical_offset())
+            pgm.mirror.voffset = float(input.mirror_vertical_offset())
+            pgm.mirror.axis_hoffset = float(input.mirror_axis_horizontal_offset())
+
         pgm.beam_width = input.beam_width()
         pgm.energy=float(input.energy())
         pgm.grating.order=int(input.order())
@@ -265,6 +280,7 @@ def server(input, output, session):
         fig.add_trace(go.Scatter(x=ray1z, y = ray1x, line={'color':'green', 'width':1.5}))
         fig.add_trace(go.Scatter(x=ray2z, y = ray2x, line={'color':'green', 'width':1.5}))
         fig.add_trace(go.Scatter(x=ray3z, y = ray3x, line={'color':'green', 'width':1.5}))
+        fig.update_layout(xaxis_title="Z (mm)", yaxis_title="X (mm)")
 
         return fig
     
@@ -284,8 +300,8 @@ def server(input, output, session):
     def beam_height_calc_ui():
         if input.calc_beam_height():
             return ui.TagList(
-                ui.input_numeric('electron_size', " Vertical Electron Beam Size (um)", 50, min=0),
-                ui.input_numeric('electron_divergence', "Electron Beam Vertical Divergence (urad)", 20, min=0),
+                ui.input_numeric('electron_size', " Vertical Electron Beam Size RMS (um)", 50, min=0),
+                ui.input_numeric('electron_divergence', "Electron Beam Vertical Divergence RMS (urad)", 20, min=0),
                 ui.input_numeric('distance_to_mirror', "Distance to Image Plane (m)", 15, min=0),
                 ui.input_numeric('length_of_id', "Length of ID (m)", 2, min=0),
                 ui.input_numeric('num_of_sigmas', "Number of Sigmas", 5, min=0),
@@ -293,5 +309,18 @@ def server(input, output, session):
         else:
             return ui.input_numeric("beam_height", "Beam Height (mm)", 5,step=0.1,min=0, max=100)
 
+
+    @render.ui
+    @reactive.event(input.calculate_offsets)
+    def offset_calc_ui():
+        if input.calculate_offsets():
+            b = -1*float(input.beam_offset)
+            return ui.TagList(
+
+                ui.output_text(f"Mirror Vertical Offset \(c\) (mm)", f"{b:.3f} mm"),
+                ui.output_text(f"Mirror Axis Horizontal Offset \(h\) (mm)", "0 mm"),
+                ui.output_text(f"Mirror Axis Vertical Offset \(v\) (mm)", f"{b/2:.3f} mm")
+
+            )
 
 app = App(app_ui, server, static_assets=app_dir / "static",)
