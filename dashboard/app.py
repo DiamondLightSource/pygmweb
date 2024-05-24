@@ -22,7 +22,7 @@ app_ui = ui.page_sidebar(
         ),
         ui.card(
             "Order",
-            ui.input_slider("order", "", 1, 10, value=1),
+            ui.input_slider("order", "", 0, 10, value=1),
             fill=False
         ),
         ui.card(
@@ -51,8 +51,8 @@ app_ui = ui.page_sidebar(
             ui.accordion_panel(
                 "Mirror Configurations",
                 ui.input_numeric('mirror_height', "Mirror Height (mm)", 40,min=0),
-                ui.input_numeric("mirror_length", "Mirror Length/Tangential (mm)", 450, min=0),
-                ui.input_numeric('mirror_width', "Mirror Width/Sagittal (mm)", 40, min=0),
+                ui.input_numeric("mirror_length", "Mirror Length (mm)", 450, min=0),
+                ui.input_numeric('mirror_width', "Mirror Width (mm)", 40, min=0),
             ),
             open=False
         ),
@@ -68,7 +68,7 @@ app_ui = ui.page_sidebar(
         ui.accordion(
             ui.accordion_panel(
                 "Offsets Configurations",
-                ui.img(src=f'{app_dir}/static/pgm.png'),
+                ui.img(src=f'pgm.png'),
                 ui.input_numeric('beam_vertical_offset', "Beam Vertical Offset \(b\) (mm) " , -13, min=-100, max=100),
                 ui.input_numeric('mirror_horizontal_offset', "Mirror Horizontal Offset \(a\) (mm)", 0, min=-100, max=100),
                 ui.input_checkbox("calculate_offsets", "Calculate Offsets Automatically", value=False),
@@ -272,7 +272,7 @@ def server(input, output, session):
                 pgm.grating_intercept[2].y + 1000*pgm.rays[2].vector[1]]
         
 
-        fig = go.Figure(layout={'showlegend':False, 'xaxis':{'range':(min(ray3z[1:])-50,max(ray2z[1:-1])+50),}, 'height':800})
+        fig = go.Figure(layout={'showlegend':False, 'xaxis':{'range':(min(ray3z[1:])-50,max(ray2z[1:-1])+50),}, 'height':1000})
         fig.add_trace(go.Scatter(x=mirror_z, y=mirror_x,fill='toself',fillcolor='red',line={"color":'red'}, marker={'size':0}, name='Mirror'))
         fig.add_trace(go.Scatter(x=grating_z, y=grating_x,fill='toself',fillcolor='blue',line={"color":'blue'}, marker={'size':0}, name='Grating')) #mode lines if to hide vertices
         fig.update_yaxes(scaleanchor="x",scaleratio=1,)
@@ -293,7 +293,7 @@ def server(input, output, session):
                                   float(input.distance_to_mirror()), 
                                   float(input.length_of_id()), 
                                   num_of_sigmas = float(input.num_of_sigmas()))
-        return f"Beam Height : {beamsize:.3f} mm"
+        return rf"Beam Height : {beamsize:.3f} mm"
     
     @render.ui
     @reactive.event(input.calc_beam_height)
