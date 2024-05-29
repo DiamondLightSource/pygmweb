@@ -1,0 +1,131 @@
+<!doctype html>
+<title>PGMweb - Plane Grating Monochromator Simulator</title>
+<style>
+  body { text-align: center; padding: 150px; }
+  h1 { font-size: 50px; }
+  body { font: 20px Helvetica, sans-serif; color: #333; }
+  article { display: block; text-align: left; width: 850px; margin: 0 auto; }
+  a { color: #f6be00; text-decoration: none; }
+  a:hover { color: #202945; text-decoration: none; }
+  li.menu-item { display: inline; margin-right: 0px; padding: 15px; text-align: left;}
+  ul.menu {margin: 0; padding: 0; overflow: hidden; }
+</style>
+<script src="https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+  });
+  </script>
+<article>
+    <h1>PGMweb: A Plane Grating Monochromator Simulation Tool</h1>
+    <ul class="menu">
+        <li class="menu-item"><a href="index.html">Home</a>
+        <li class="menu-item"><a href="tutorial.html">Documentation</a>
+        <li class="menu-item"><a href="about.html">About</a></li>
+        <li class="menu-item"><a href="raytracing.html">Ray-tracing with PGMs</a></li>
+        <li class="menu-item"><a href="contact.html">Contact</a></li>
+
+      </ul>
+    <div>
+      <h2> Documentation </h2>
+      <ol class="toc" role="list">
+        <li>
+          <a href="#Initialisation">
+            <span class="title">Initialisation and System Requirements</span>
+          </a>
+        </li>
+        <li>
+          <a href="#Parameters">
+            <span class="title">Parameters</span>
+          </a>
+        </li>
+        <li>
+          <a href="#Beam-Size-Configuration">
+            <span class="title">Beam Size Configuration</span>
+          </a>
+        </li>
+        <li>
+          <a href="#Offsets-Configurations">
+            <span class="title">Offsets Configurations</span>
+          </a>
+        </li>
+    </ol>
+        <p>
+            PGMweb is a web-based simulation tool for plane grating monochromators (PGM) frequently used in soft X-ray synchrotron beamlines and at free-electron lasers.
+            The interface is built using <a href="https://shiny.posit.co/py/">Shinylive</a>. Any modern browser will be able to run the tool. However, for best experience,
+            we recommend using the latest version of Google Chrome or Mozilla Firefox on a desktop or laptop computer as scaling may be an issue on mobile devices.
+
+          <h2 id="Initialisation">Initialisation and System Requirements</h2>
+
+            Upon first loading the tool, a loading screen will appear as the tool is being initialised. Your browser will gather all the necessary files and install
+            a minimal python environment within the browser to perform calculations. Depending on your internet connection, this may take up to a minute to load as about 200 MB
+            of data is transferred. Subsequent reloading may be significantly faster depending on your browser's caching settings.
+
+          <h2 id="Parameters"> Parameters </h2>
+          The control interface highlights four primary parameters which you may wish to change often. They are:
+          <nl>
+
+            <li> Energy - floating point number in units of eV, this sets the energy to be <em>transmitted</em> by the PGM.
+            <li> Diffraction order - integer, this sets the diffraction order from the grating.
+            <li> $\mathit{c_{ff}}$, fixed focus constant - floating point number where $\mathit{c_{ff}}\in ]1, \infty)$
+            <li> Grating line density - floating point number in units of lines/mm.
+          </nl>
+          These four parameters are fed to the grating equation and angles are computed. The grating equation has the form:
+
+          $$1 - \left( \frac{n\lambda}{g} - \sin\beta\right)^2 = \frac{\cos^2\beta}{\mathit{c_{ff}}^2}$$
+          
+          where $n$ is the diffraction order, $\lambda$ is the wavelength, $g$ is the reciprocal of the grating line density, $\beta$ is the angle of diffraction from the grating,
+          and $\mathit{c_{ff}}$ is $\frac{\cos\beta}{\cos\alpha}$. To ensure that the outgoing beam is parallel to the incoming beam, incidence angle on the mirror ($\theta$) is 
+          constrained to: $2\theta = \beta + \alpha$.
+		
+    
+        </p>
+
+        <h2 id="Beam-Size-Configuration"> Beam Size Configuration</h2>
+        <p> You may choose to specify your own vertical and horizontal beamsize in mm at the mirror. Additionally, the tool
+          provides you the capability of calculating the vertical beam size from an undulator source. This is accessed by ticking
+          the "Calculate beam size" checkbox, which will prompt you to enter the following parameters:
+          <nl>
+            <li> Vertical electron beam size (RMS) in um - $\sigma_y$
+            <li> Vertical electron beam divergence in urad - $\sigma'_y$
+            <li> Distance to the image plane (m) - $d$
+              <li> Length of insertion device - $L$</li>
+              <li> Number of $\sigma$s to include - $n_\sigma$</li>
+          </nl>
+          The RMS electron source size is first calculated with the formula:
+          $$\text{Source Size} = \sqrt{\sigma_y^2 + \frac{\lambda L}{2\pi^2}}$$
+          where $\lambda$ is the wavelength of the beam. The source divergence is then calculated as:
+          $$\text{Source Divergence} = \sqrt{\sigma_y'^2 + \left(\frac{\lambda}{\pi L}\right)^2}$$
+          with the final beam height at the mirror calculated as:
+          $$\text{Beam Height} = \sqrt{\text{Source Size}^2 + (\text{Source Divergence}\cdot d)^2}\cdot n_\sigma$$
+
+        <h2 id="Offsets-Configurations"> Offsets Configurations</h2>
+        <p>
+        The offsets are defined according to the following diagram:
+        <img src="pgm-12cm.png" alt="Offsets diagram" style="width: 600px; margin: 0 auto; display: block;">
+        where the quantities which can be defined by the user are highlighted in red arrows:
+        <nl>
+          <li> $b$ - the vertical beam offset, should be a negative value.
+          <li> $c$ - the vertical  offset, defines the distance from $\mathbf{C}$ (the mirror rotation centre)
+            to the point $\mathbf{E}$ (projection of $\mathbf{C}$ onto the mirror plane), should be a positive value.
+          <li> $a$ - the horizontal offset, the same as $c$ but for the horizontal component. Should normally be positive but can be negative.
+          <li> $v$ - the vertical axis offset, defines the distance from the mirror rotation centre to the grating rotation centre. Should be positive.
+          <li>$h$ - the horizontal axis offset, defines the distance from the mirror rotation centre to the grating rotation centre. Should be positive but is usually 0. 
+          
+          The tool offers you the option to calculate offsets automatically. When this option is selected, you will only need to specify the offsets $b$ and $a$, 
+          the rest of the offsets will be calculated as per:
+          
+          $$|b| \approx c \approx 2v$$
+
+          and $h$ is set automatically to 0.
+        
+          </p>
+
+        <p> This tool is provided as is and without warranty. It is available for free and open-source use under the MIT license. 
+        <a href="https://opensource.org/license/mit"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license" style="width: 80px; margin: 0 auto; display: block;"></a>
+        </p>
+        <div>
+        <a href="https://diamond.ac.uk"><img src="dlslogo.jpg.jpg" alt="Diamond Light Source logo" style="width: 200px; margin: 0 auto; display: block;"></a>
+        <p>Copyright 2024 Patrick Wang</p>
+    </div>
+</article>

@@ -1,0 +1,49 @@
+<!doctype html>
+<title>PGMweb - Plane Grating Monochromator Simulator</title>
+<style>
+  body { text-align: center; padding: 150px; }
+  h1 { font-size: 50px; }
+  body { font: 20px Helvetica, sans-serif; color: #333; }
+  article { display: block; text-align: left; width: 850px; margin: 0 auto; }
+  a { color: #f6be00; text-decoration: none; }
+  a:hover { color: #202945; text-decoration: none; }
+  li.menu-item { display: inline; margin-right: 0px; padding: 15px; text-align: left;}
+  ul.menu {margin: 0; padding: 0; overflow: hidden; }
+</style>
+<script src="https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+  });
+  </script>
+<article>
+    <h1>PGMweb: A Plane Grating Monochromator Simulation Tool</h1>
+    <ul class="menu">
+        <li class="menu-item"><a href="index.html">Home</a>
+        <li class="menu-item"><a href="tutorial.html">Documentation</a>
+        <li class="menu-item"><a href="about.html">About</a></li>
+        <li class="menu-item"><a href="raytracing.html">Ray-tracing with PGMs</a></li>
+        <li class="menu-item"><a href="contact.html">Contact</a></li>
+
+      </ul>
+    <div>
+      <h2> Ray-tracing with PGMs </h2>
+        <p>
+            Another major motivation for the development of the underlying codebase for PGMweb was the lack of tools to perform
+            ray-tracing simulations for beamlines with PGMs. pyplanemono, the python package which handles the calculation of 
+            geometrical quantities also has an interface with SHADOW3, the ray-tracing engine. This allows the user to perform scans 
+            over a range of parameter without the need for them to intervene. 
+
+            <br><br>
+            A publication detailing the ray-tracing procedures is forthcoming.
+
+
+		</p>
+        <p> This tool is provided as is and without warranty. It is available for free and open-source use under the MIT license. 
+        <a href="https://opensource.org/license/mit"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license" style="width: 80px; margin: 0 auto; display: block;"></a>
+        </p>
+        <div>
+        <a href="https://diamond.ac.uk"><img src="dlslogo.jpg.jpg" alt="Diamond Light Source logo" style="width: 200px; margin: 0 auto; display: block;"></a>
+        <p>Copyright 2024 Patrick Wang</p>
+    </div>
+</article>
