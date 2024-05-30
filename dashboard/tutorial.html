@@ -52,12 +52,12 @@
     </ol>
         <p>
             PGMweb is a web-based simulation tool for plane grating monochromators (PGM) frequently used in soft X-ray synchrotron beamlines and at free-electron lasers.
-            The interface is built using <a href="https://shiny.posit.co/py/">Shinylive</a>. Any modern browser will be able to run the tool. However, for best experience,
+            The interface was built using <a href="https://shiny.posit.co/py/">Shinylive</a>. Any modern browser will be able to run the tool. However, for best experience,
             we recommend using the latest version of Google Chrome or Mozilla Firefox on a desktop or laptop computer as scaling may be an issue on mobile devices.
 
           <h2 id="Initialisation">Initialisation and System Requirements</h2>
 
-            Upon first loading the tool, a loading screen will appear as the tool is being initialised. Your browser will gather all the necessary files and install
+            Upon first visit, a loading screen will appear as the tool is being initialised. Your browser will gather all the necessary files and install
             a minimal python environment within the browser to perform calculations. Depending on your internet connection, this may take up to a minute to load as about 200 MB
             of data is transferred. Subsequent reloading may be significantly faster depending on your browser's caching settings.
 
@@ -98,19 +98,20 @@
           $$\text{Source Divergence} = \sqrt{\sigma_y'^2 + \left(\frac{\lambda}{\pi L}\right)^2}$$
           with the final beam height at the mirror calculated as:
           $$\text{Beam Height} = \sqrt{\text{Source Size}^2 + (\text{Source Divergence}\cdot d)^2}\cdot n_\sigma$$
-
+          This has the added benefit of updating the beam size at the PGM as the energy is changed. 
         <h2 id="Offsets-Configurations"> Offsets Configurations</h2>
         <p>
         The offsets are defined according to the following diagram:
-        <img src="pgm-12cm.png" alt="Offsets diagram" style="width: 600px; margin: 0 auto; display: block;">
+        <img src="pgm.svg" alt="Offsets diagram" style="width: 600px; margin: 0 auto; display: block;">
+        
         where the quantities which can be defined by the user are highlighted in red arrows:
         <nl>
           <li> $b$ - the vertical beam offset, should be a negative value.
           <li> $c$ - the vertical  offset, defines the distance from $\mathbf{C}$ (the mirror rotation centre)
             to the point $\mathbf{E}$ (projection of $\mathbf{C}$ onto the mirror plane), should be a positive value.
-          <li> $a$ - the horizontal offset, the same as $c$ but for the horizontal component. Should normally be positive but can be negative.
-          <li> $v$ - the vertical axis offset, defines the distance from the mirror rotation centre to the grating rotation centre. Should be positive.
-          <li>$h$ - the horizontal axis offset, defines the distance from the mirror rotation centre to the grating rotation centre. Should be positive but is usually 0. 
+          <li> $a$ - the horizontal offset, the same as $c$ but for the horizontal component. $a$ should normally be positive but can be negative.
+          <li> $v$ - the vertical axis offset, defines the distance from the mirror rotation centre to the grating rotation centre. $v$ should be positive.
+          <li>$h$ - the horizontal axis offset, defines the distance from the mirror rotation centre to the grating rotation centre. $h$ should be positive but is usually 0. 
           
           The tool offers you the option to calculate offsets automatically. When this option is selected, you will only need to specify the offsets $b$ and $a$, 
           the rest of the offsets will be calculated as per:
@@ -118,14 +119,34 @@
           $$|b| \approx c \approx 2v$$
 
           and $h$ is set automatically to 0.
+
+          The derivation of this relation can be found in our publication.
         
           </p>
+
+        <h2> Interacting with Plots</h2>
+        <p>
+          Each time a parameter is changed, after a set delay, the tool will generate new plots. The beam footprint plot ("top view") shows a 
+          pseudo-birdseye view of the PGM from above, with the top of the optical surfaces of the mirror and grating shown, as well as the footprint
+          that the beam leaves on the respective surfaces. This shows you whether or not overillumination happens, and if the beam is correctly fitting 
+          on the surfaces. 
+          <br><br>
+          The side view plot shows three rays propagating through the PGM. The beam formed by the three rays are of correct height either specified by the user or
+          calculated from ID parameters. 
+          <br><br>
+          Both plots are interactive and can be panned and zoomed thanks to plotly. For more information on how to interact with the plots, please visit the
+          <a href="https://plotly.com/python/plotly-fundamentals/">plotly documentation</a>. But in summary, the functions are located on the top right corner
+          of each of the plots, and offer you the ability to export the plot as a PNG, zoom in and out either by selecting a rectangular region or using the + and - buttons, and pan around the plot.
+          <br><br>
+
+          <strong> If you fail to see the buttons, and or fail to see the full axis range, it is likely a scaling issue. This can be fixed by zooming out in your browser, commonly done with "Ctrl -".</strong>
+        </p> 
 
         <p> This tool is provided as is and without warranty. It is available for free and open-source use under the MIT license. 
         <a href="https://opensource.org/license/mit"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license" style="width: 80px; margin: 0 auto; display: block;"></a>
         </p>
         <div>
         <a href="https://diamond.ac.uk"><img src="dlslogo.jpg.jpg" alt="Diamond Light Source logo" style="width: 200px; margin: 0 auto; display: block;"></a>
-        <p>Copyright 2024 Patrick Wang</p>
+        <p>Copyright 2024 Patrick Wang, Andrew Walters, and Murilo Bazan da Silva</p>
     </div>
 </article>
