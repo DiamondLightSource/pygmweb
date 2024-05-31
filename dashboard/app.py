@@ -72,7 +72,7 @@ app_ui = ui.page_sidebar(
                 ui.input_numeric('mirror_horizontal_offset', "Mirror Horizontal Offset \(a\) (mm)", 0, min=-100, max=100),
                 ui.input_checkbox("calculate_offsets", "Calculate Offsets Automatically", value=False),
                 ui.output_ui('offset_calc_ui'),
-            ), open=False),
+            ), open=True),
         title="PGM Configurations"),
 
 
@@ -94,6 +94,58 @@ Shiny.addCustomMessageHandler('updateMath', function(message) {
 
 def server(input, output, session):
 
+    @render.text
+    def beam_size_mirror():
+        
+        beamsize = calc_beam_size(float(input.electron_size()), 
+                                  float(input.electron_divergence()), 
+                                  to_wavelength(float(input.energy()))/1E-9, 
+                                  float(input.distance_to_mirror()), 
+                                  float(input.length_of_id()), 
+                                  num_of_sigmas = float(input.num_of_sigmas()))
+        return rf"Beam Height : {beamsize:.3f} mm"
+
+    @render.ui
+    @reactive.event(input.calc_beam_height)
+    def beam_height_calc_ui():
+        if input.calc_beam_height():
+            return ui.TagList(
+                ui.input_numeric('electron_size', " Vertical Electron Beam Size RMS (um)", 50, min=0),
+                ui.input_numeric('electron_divergence', "Electron Beam Vertical Divergence RMS (urad)", 20, min=0),
+                ui.input_numeric('distance_to_mirror', "Distance to Image Plane (m)", 15, min=0),
+                ui.input_numeric('length_of_id', "Length of ID (m)", 2, min=0),
+                ui.input_numeric('num_of_sigmas', "Number of Sigmas", 5, min=0),
+                ui.output_text("beam_size_mirror"),)
+        else:
+            return ui.input_numeric("beam_height", "Beam Height (mm)", 5,step=0.1,min=0, max=100)
+
+    @render.text
+    def voffset_out():
+        return f"Mirror Vertical Offset c : {-1*float(input.beam_vertical_offset())} mm"
+    
+    @render.text
+    def axis_hoffset_out():
+        return f"Mirror Axis Horizontal Offset h : 0 mm"
+    
+    @render.text
+    def axis_voffset_out():
+        return f"Mirror Axis Vertical Offset v : {-1*input.beam_vertical_offset()/2} mm"
+
+    
+    @render.ui
+    @reactive.event(input.calculate_offsets)
+    def offset_calc_ui():
+        if input.calculate_offsets():
+            return ui.TagList(
+                ui.output_text("voffset_out"),
+                ui.output_text('axis_hoffset_out'),
+                ui.output_text('axis_voffset_out'), )
+        else:
+            return ui.TagList(
+                ui.input_numeric('mirror_vertical_offset', "Mirror Vertical Offset c (mm)", 13, min=-100, max=100),
+                ui.input_numeric('mirror_axis_horizontal_offset', "Mirror Axis Horizontal Offset h (mm)", 0, min=-100, max=100),
+                ui.input_numeric('mirror_axis_vertical_offset', "Mirror Axis Vertical Offset v (mm)", 6.5, min=-100, max=100),
+            )
     @render_plotly
     def top_view():
         pgm = PGM(grating=Grating(), mirror=Plane_Mirror())
@@ -290,60 +342,6 @@ def server(input, output, session):
         fig.update_layout(xaxis_title="Z (mm)", yaxis_title="X (mm)")
 
         return fig
-
-    @render.text
-    def beam_size_mirror():
-        
-        beamsize = calc_beam_size(float(input.electron_size()), 
-                                  float(input.electron_divergence()), 
-                                  to_wavelength(float(input.energy()))/1E-9, 
-                                  float(input.distance_to_mirror()), 
-                                  float(input.length_of_id()), 
-                                  num_of_sigmas = float(input.num_of_sigmas()))
-        return rf"Beam Height : {beamsize:.3f} mm"
-
-    @render.ui
-    @reactive.event(input.calc_beam_height)
-    def beam_height_calc_ui():
-        if input.calc_beam_height():
-            return ui.TagList(
-                ui.input_numeric('electron_size', " Vertical Electron Beam Size RMS (um)", 50, min=0),
-                ui.input_numeric('electron_divergence', "Electron Beam Vertical Divergence RMS (urad)", 20, min=0),
-                ui.input_numeric('distance_to_mirror', "Distance to Image Plane (m)", 15, min=0),
-                ui.input_numeric('length_of_id', "Length of ID (m)", 2, min=0),
-                ui.input_numeric('num_of_sigmas', "Number of Sigmas", 5, min=0),
-                ui.output_text("beam_size_mirror"),)
-        else:
-            return ui.input_numeric("beam_height", "Beam Height (mm)", 5,step=0.1,min=0, max=100)
-
-    @render.text
-    def voffset_out():
-        return f"Mirror Vertical Offset c : {-1*float(input.beam_vertical_offset())} mm"
-    
-    @render.text
-    def axis_hoffset_out():
-        return f"Mirror Axis Horizontal Offset h : 0 mm"
-    
-    @render.text
-    def axis_voffset_out():
-        return f"Mirror Axis Vertical Offset v : {-1*input.beam_vertical_offset()/2} mm"
-
-    
-    @render.text
-    @reactive.event(input.calculate_offsets)
-    def offset_calc_ui():
-        if input.calculate_offsets():
-            return ui.TagList(
-                ui.output_text("voffset_out"),
-                ui.output_text('axis_hoffset_out'),
-                ui.output_text('axis_voffset_out'), )
-        else:
-            return ui.TagList(
-                ui.input_numeric('mirror_vertical_offset', "Mirror Vertical Offset c (mm)", 13, min=-100, max=100),
-                ui.input_numeric('mirror_axis_horizontal_offset', "Mirror Axis Horizontal Offset h (mm)", 0, min=-100, max=100),
-                ui.input_numeric('mirror_axis_vertical_offset', "Mirror Axis Vertical Offset v (mm)", 6.5, min=-100, max=100),
-            )
-
 
     
 app = App(app_ui, server, static_assets=app_dir)
