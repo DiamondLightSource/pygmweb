@@ -1,11 +1,15 @@
 from faicons import icon_svg
 from pathlib import Path
-from shiny import App, reactive, render, ui, Session
+from shiny import App, reactive, render, ui
 app_dir = Path(__file__).parent
 from pyplanemono_minimal.elements import *
 from pyplanemono_minimal.geometry import calc_beam_size
 import plotly.graph_objects as go
 from shinywidgets import output_widget, render_plotly
+from configparser import ConfigParser
+from shiny.types import FileInfo
+import asyncio
+import io
 
 H = 6.62607015e-34
 E = 1.602176634e-19
@@ -73,21 +77,26 @@ app_ui = ui.page_sidebar(
                 ui.input_checkbox("calculate_offsets", "Calculate Offsets Automatically", value=False),
                 ui.output_ui('offset_calc_ui'),
             ), open=True),
+        ui.accordion(
+            ui.accordion_panel("Export and Import",
+                ui.download_button("export_pgm","Export Current PGM"),
+                ui.input_file("import_pgm","Upload Configuration File", accept=".pgm", multiple=False),
+                ui.input_action_button("import_button", "Import")),
+                
+                open=False),
+
         title="PGM Configurations"),
+
+        
 
 
     ui.card(ui.card_header("Footprint View", "  ", ui.tooltip(icon_svg('circle-info'),"Beam footprint size", id='beamfootprint_tooltip')),output_widget("top_view"),full_screen=True),
-    ui.card(ui.card_header("Side View"),output_widget("side_view"),full_screen=True, fill=True),
+    ui.card(ui.card_header("Side View", " ", ui.tooltip(icon_svg('circle-info'),ui.output_ui('side_view_angles'), id='angle_tooltip')),output_widget("side_view"),full_screen=True, fill=True),
 
     ui.include_css(app_dir / "styles.css"),
     ui.tags.head(ui.tags.script(src="https://polyfill.io/v3/polyfill.min.js?features=es6"),
     ui.tags.script(id="MathJax-script", src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js")),
-    ui.tags.script("""
-Shiny.addCustomMessageHandler('updateMath', function(message) {
-  MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-});"""
-),
-    title="Plane Grating Monochromator Simulator",
+    title="PGMweb",
     fillable=True
 )
 
@@ -119,17 +128,24 @@ def server(input, output, session):
         else:
             return ui.input_numeric("beam_height", "Beam Height (mm)", 5,step=0.1,min=0, max=100)
 
-    @render.text
+    @render.ui
     def voffset_out():
-        return f"Mirror Vertical Offset c : {-1*float(input.beam_vertical_offset())} mm"
-    
-    @render.text
+        return ui.TagList(
+            ui.tags.div(f"Mirror Vertical Offset \(c\) : {-1*float(input.beam_vertical_offset())} mm"),
+            ui.tags.script("MathJax.typesetPromise();"))    
+    @render.ui
     def axis_hoffset_out():
-        return f"Mirror Axis Horizontal Offset h : 0 mm"
+        return ui.TagList(
+            ui.tags.div(f"Mirror Axis Horizontal Offset \(h\) : 0 mm"),
+            ui.tags.script("MathJax.typesetPromise();"))
     
-    @render.text
+    
+    @render.ui
     def axis_voffset_out():
-        return f"Mirror Axis Vertical Offset v : {-1*input.beam_vertical_offset()/2} mm"
+        return ui.TagList(
+            ui.tags.div(f"Mirror Axis Vertical Offset \(v\) : {-1*float(input.beam_vertical_offset())/2} mm"),
+            ui.tags.script("MathJax.typesetPromise();"))
+    
 
     
     @render.ui
@@ -137,14 +153,16 @@ def server(input, output, session):
     def offset_calc_ui():
         if input.calculate_offsets():
             return ui.TagList(
-                ui.output_text("voffset_out"),
-                ui.output_text('axis_hoffset_out'),
-                ui.output_text('axis_voffset_out'), )
+                ui.output_ui("voffset_out"),
+                ui.output_ui('axis_hoffset_out'),
+                ui.output_ui('axis_voffset_out'), 
+                )
         else:
             return ui.TagList(
-                ui.input_numeric('mirror_vertical_offset', "Mirror Vertical Offset c (mm)", 13, min=-100, max=100),
-                ui.input_numeric('mirror_axis_horizontal_offset', "Mirror Axis Horizontal Offset h (mm)", 0, min=-100, max=100),
-                ui.input_numeric('mirror_axis_vertical_offset', "Mirror Axis Vertical Offset v (mm)", 6.5, min=-100, max=100),
+                ui.input_numeric(r'mirror_vertical_offset', "Mirror Vertical Offset \(c\) (mm)", 13, min=-100, max=100),
+                ui.input_numeric(r'mirror_axis_horizontal_offset', "Mirror Axis Horizontal Offset \(h\) (mm)", 0, min=-100, max=100),
+                ui.input_numeric(r'mirror_axis_vertical_offset', "Mirror Axis Vertical Offset \(v\) (mm)", 6.5, min=-100, max=100),
+                ui.tags.script("MathJax.typesetPromise();")
             )
     @render_plotly
     def top_view():
@@ -240,8 +258,8 @@ def server(input, output, session):
                                 'height':400})
         fig.add_trace(go.Scatter(x=mirror_corners[:,0], y=mirror_corners[:,1],fill='toself',fillcolor='red',line={"color":'red'}, marker={'size':0}, name='Mirror', hovertemplate='%{x:.2f} mm, %{y:.2f} mm'))
         fig.add_trace(go.Scatter(x=grating_corners[:,0], y=grating_corners[:,1],fill='toself',fillcolor='blue',line={"color":'blue'}, marker={'size':0}, name='Grating', hovertemplate='%{x:.2f} mm, %{y:.2f} mm'))
-        fig.add_trace(go.Scatter(x=mirr_footprint_corners[:,0], y=mirr_footprint_corners[:,1],fill='toself',fillcolor='green',line={"color":'green'}, marker={'size':0}, name='Beam Footprint', hovertemplate='%{x:.2f} mm, %{y:.2f} mm'))
-        fig.add_trace(go.Scatter(x=grating_footprint_corners[:,0], y=grating_footprint_corners[:,1],fill='toself',fillcolor='green',line={"color":'green'}, marker={'size':0}, showlegend=False, hovertemplate='%{x:.2f} mm, %{y:.2f} mm'))
+        fig.add_trace(go.Scatter(x=mirr_footprint_corners[:,0], y=mirr_footprint_corners[:,1],fill='toself',fillcolor='green',line={"color":'green'}, marker={'size':0}, name='Beam', hovertemplate='%{x:.2f} mm, %{y:.2f} mm'))
+        fig.add_trace(go.Scatter(x=grating_footprint_corners[:,0], y=grating_footprint_corners[:,1],fill='toself',fillcolor='green',line={"color":'green'}, marker={'size':0}, showlegend=False,name='Beam', hovertemplate='%{x:.2f} mm, %{y:.2f} mm'))
         fig.update_layout(xaxis_title="Z (mm)", yaxis_title="X (mm)")
         return fig
 
@@ -336,12 +354,164 @@ def server(input, output, session):
         fig.add_trace(go.Scatter(x=grating_z, y=grating_x,fill='toself',fillcolor='blue',line={"color":'blue'}, marker={'size':0}, name='Grating', hovertemplate='%{x:.2f} mm, %{y:.2f} mm')) #mode lines if to hide vertices
         fig.update_yaxes(scaleanchor="x",scaleratio=1,)
 
-        fig.add_trace(go.Scatter(x=ray1z, y = ray1x, line={'color':'green', 'width':1.5}, hovertemplate='%{x:.2f} mm, %{y:.2f} mm'))
-        fig.add_trace(go.Scatter(x=ray2z, y = ray2x, line={'color':'green', 'width':1.5}, hovertemplate='%{x:.2f} mm, %{y:.2f} mm'))
-        fig.add_trace(go.Scatter(x=ray3z, y = ray3x, line={'color':'green', 'width':1.5}, hovertemplate='%{x:.2f} mm, %{y:.2f} mm'))
+        fig.add_trace(go.Scatter(x=ray1z, y = ray1x, line={'color':'green', 'width':1.5}, hovertemplate='%{x:.2f} mm, %{y:.2f} mm', name='Centre Ray'))
+        fig.add_trace(go.Scatter(x=ray2z, y = ray2x, line={'color':'green', 'width':1.5}, hovertemplate='%{x:.2f} mm, %{y:.2f} mm', name='Upper Ray'))
+        fig.add_trace(go.Scatter(x=ray3z, y = ray3x, line={'color':'green', 'width':1.5}, hovertemplate='%{x:.2f} mm, %{y:.2f} mm', name='Lower Ray'))
         fig.update_layout(xaxis_title="Z (mm)", yaxis_title="X (mm)")
-
+        
         return fig
-
+    @render.ui
+    @reactive.event(input.angle_tooltip)
+    def side_view_angles():
+        pgm = PGM(grating=Grating(), mirror=Plane_Mirror())
+        pgm.energy=float(input.energy())
+        pgm.grating.order=int(input.order())
+        pgm.cff=float(input.c_ff())
+        pgm.grating.line_density=float(input.line_density())
+        alpha, beta = pgm.grating.compute_angles()
+        pgm.set_theta()
+        theta = pgm.theta
+        return ui.TagList(
+            ui.tags.div(
+                rf"\(\alpha = {alpha:.2f}^\circ\), \(\beta = {beta:.2f}^\circ\), \(\theta = {theta:.2f}^\circ\)"
+            ),
+            ui.tags.script("MathJax.typesetPromise();"))
     
+    
+    @reactive.effect
+    @reactive.event(input.import_button)
+   
+    def import_pgm():
+        file: list[FileInfo] | None = input.import_pgm()
+        if file is None:
+            return None
+        parser = ConfigParser()
+        parser.read( # pyright: ignore[reportUnknownMemberType]
+            file[0]["datapath"])
+        pgm_keys = [
+            'offsets',
+            'mirror',
+            'grating',
+            'core',
+            'beam']
+        if not all([key in parser.sections() for key in pgm_keys]):
+            error_message = ui.modal("The file doesn't meet the specifications.", 
+                                     title="Invalid PGM file",
+                                     easy_close=True)
+            ui.modal_show(error_message)
+            return None
+        # Loads core parameters
+        try:
+            ui.update_numeric('energy', value=parser.getfloat('core', 'energy'))
+            ui.update_numeric('order', value=parser.getint('core', 'order'))
+            ui.update_numeric('c_ff', value=parser.getfloat('core', 'cff'))
+            ui.update_numeric('line_density', value=parser.getfloat('grating', 'line_density'))
+            # Loads beam parameters
+            ui.update_checkbox('calc_beam_height', value=parser.getboolean('beam', 'calculate_from_id'))
+            if parser.getboolean('beam', 'calculate_from_id') and 'beam_height' not in parser['beam']:
+                ui.update_checkbox('calc_beam_height', True)
+                ui.update_numeric('electron_size', value=parser.getfloat('beam', 'vert_electron_size'))
+                ui.update_numeric('electron_divergence', value=parser.getfloat('beam', 'vert_electron_divergence'))
+                ui.update_numeric('distance_to_mirror', parser.getfloat('beam', 'distance'))
+                ui.update_numeric('length_of_id', value=parser.getfloat('beam', 'id_length'))
+                ui.update_numeric('num_of_sigmas', value=parser.getfloat('beam', 'num_of_sigmas'))
+            else:
+                ui.update_checkbox('calc_beam_height', value=False)
+                ui.update_numeric('beam_height', value=parser.getfloat('beam', 'beam_height'))
+            ui.update_numeric('beam_width', value=parser.getfloat('beam', 'beam_width'))
+
+            # Loads Mirror Parameters
+            ui.update_numeric('mirror_height', value=parser.getfloat('mirror', 'height'))
+            ui.update_numeric('mirror_length', value=parser.getfloat('mirror', 'length'))
+            ui.update_numeric('mirror_width', value=parser.getfloat('mirror', 'width'))
+            # Loads Grating Parameters
+            ui.update_numeric('grating_height', value=parser.getfloat('grating', 'height'))
+            ui.update_numeric('grating_length', value=parser.getfloat('grating', 'length'))
+            ui.update_numeric('grating_width', value=parser.getfloat('grating', 'width'))
+            # Loads offsets
+            ui.update_checkbox('calculate_offsets', value=parser.getboolean('offsets', 'calculate_offsets'))
+            if parser.getboolean('offsets', 'calculate_offsets'):
+                ui.update_numeric('beam_vertical_offset', value=parser.getfloat('offsets', 'beam_vertical_offset'))
+            else:
+                ui.update_checkbox('calculate_offsets', value=False)
+                print('in else here')
+                ui.update_numeric('beam_vertical_offset', value=parser.getfloat('offsets', 'beam_vertical_offset'))
+                ui.update_numeric('mirror_vertical_offset', value=parser.getfloat('offsets', 'mirror_vertical_offset'))
+                ui.update_numeric('mirror_axis_horizontal_offset', value=parser.getfloat('offsets', 'mirror_axis_horizontal_offset'))
+                ui.update_numeric('mirror_axis_vertical_offset', value=parser.getfloat('offsets', 'mirror_axis_vertical_offset'))
+            success_message = ui.modal("The PGM configuration has been successfully imported.",
+                                        title="Import Successful",
+                                        easy_close=True)
+            ui.modal_show(success_message)
+        except Exception as e:
+            error_message = ui.modal(str(e), title="Error", easy_close=True)
+            ui.modal_show(error_message)
+            return None
+            
+    @render.download(filename='export.pgm')
+
+    def export_pgm():
+        parser = ConfigParser()
+        parser['core'] = {
+            'energy': str(input.energy()),
+            'order': str(input.order()),
+            'cff': str(input.c_ff())
+        }
+
+        if input.calc_beam_height():
+            parser['beam'] = {
+                'calculate_from_id': str(input.calc_beam_height()),
+                'vert_electron_size': str(input.electron_size()),
+                'vert_electron_divergence': str(input.electron_divergence()),
+                'distance': str(input.distance_to_mirror()),
+                'id_length': str(input.length_of_id()),
+                'num_of_sigmas': str(input.num_of_sigmas()),
+                'beam_width': str(input.beam_width())
+            }
+        else:
+            parser['beam'] = {
+                'calculate_from_id': str(input.calc_beam_height()),
+                'beam_height': str(input.beam_height()),
+                'beam_width': str(input.beam_width())
+            }
+        parser['mirror'] = {
+            'height': str(input.mirror_height()),
+            'length': str(input.mirror_length()),
+            'width': str(input.mirror_width())
+        }
+        parser['grating'] = {
+            'height': str(input.grating_height()),
+            'length': str(input.grating_length()),
+            'width': str(input.grating_width()),
+            'line_density': str(input.line_density())
+        }
+
+        if input.calculate_offsets():
+            parser['offsets'] = {
+                'calculate_offsets': str(input.calculate_offsets()),
+                'beam_vertical_offset': str(input.beam_vertical_offset())
+            }
+        else:
+            parser['offsets'] = {
+                'calculate_offsets': str(input.calculate_offsets()),
+                'beam_vertical_offset': str(input.beam_vertical_offset()),
+                'mirror_vertical_offset': str(input.mirror_vertical_offset()),
+                'mirror_horizontal_offset': str(input.mirror_horizontal_offset()),
+                'mirror_axis_horizontal_offset': str(input.mirror_axis_horizontal_offset()),
+                'mirror_axis_vertical_offset': str(input.mirror_axis_vertical_offset())
+            }
+        with io.StringIO() as buffer:
+            buffer.write("# PGM Configuration File\n\n")
+            buffer.write("#pgmweb.diamond.ac.uk\n\n")
+            buffer.write('# See pgmweb.diamond.ac.uk/tutorial.html for parameters\n\n')
+            buffer.write('# Please consider citing:\n# Wang, Y.P., Walters, A.C., Bazan da Silva, M., et al., PGMweb: An Online Simulation Tool for Plane Grating Monochromators, In preparation.\n\n')
+
+            parser.write(buffer)
+            buffer.seek(0)
+            
+            yield buffer.read()
+        
+
+
+
 app = App(app_ui, server, static_assets=app_dir)

@@ -92,13 +92,13 @@
               <li> Length of insertion device - $L$</li>
               <li> Number of $\sigma$s to include - $n_\sigma$</li>
           </nl>
-          The RMS electron source size is first calculated with the formula:
+          The RMS photon source size is first calculated with the formula:
           $$\text{Source Size} = \sqrt{\sigma_y^2 + \frac{\lambda L}{2\pi^2}}$$
-          where $\lambda$ is the wavelength of the beam. The source divergence is then calculated as:
+          where $\lambda$ is the wavelength of the beam. The photon source divergence is then calculated as:
           $$\text{Source Divergence} = \sqrt{\sigma_y'^2 + \left(\frac{\lambda}{\pi L}\right)^2}$$
           with the final beam height at the mirror calculated as:
           $$\text{Beam Height} = \sqrt{\text{Source Size}^2 + (\text{Source Divergence}\cdot d)^2}\cdot n_\sigma$$
-          This has the added benefit of updating the beam size at the PGM as the energy is changed. 
+          Using this function will correctly account for the changing beam size as you change the energy of the PGM.
         <h2 id="Offsets-Configurations"> Offsets Configurations</h2>
         <p>
         The offsets are defined according to the following diagram:
