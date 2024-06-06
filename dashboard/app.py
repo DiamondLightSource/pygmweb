@@ -79,6 +79,7 @@ app_ui = ui.page_sidebar(
             ), open=True),
         ui.accordion(
             ui.accordion_panel("Export and Import",
+                ui.input_text("export_filename", "Export Filename", "pgm_configurations.pgm"),
                 ui.download_button("export_pgm","Export Current PGM"),
                 ui.input_file("import_pgm","Upload Configuration File", accept=".pgm", multiple=False),
                 ui.input_action_button("import_button", "Import")),
@@ -409,10 +410,10 @@ def server(input, output, session):
             # Loads beam parameters
             ui.update_checkbox('calc_beam_height', value=parser.getboolean('beam', 'calculate_from_id'))
             if parser.getboolean('beam', 'calculate_from_id') and 'beam_height' not in parser['beam']:
-                ui.update_checkbox('calc_beam_height', True)
+                ui.update_checkbox('calc_beam_height', value = True)
                 ui.update_numeric('electron_size', value=parser.getfloat('beam', 'vert_electron_size'))
                 ui.update_numeric('electron_divergence', value=parser.getfloat('beam', 'vert_electron_divergence'))
-                ui.update_numeric('distance_to_mirror', parser.getfloat('beam', 'distance'))
+                ui.update_numeric('distance_to_mirror', value = parser.getfloat('beam', 'distance'))
                 ui.update_numeric('length_of_id', value=parser.getfloat('beam', 'id_length'))
                 ui.update_numeric('num_of_sigmas', value=parser.getfloat('beam', 'num_of_sigmas'))
             else:
@@ -448,7 +449,7 @@ def server(input, output, session):
             ui.modal_show(error_message)
             return None
             
-    @render.download(filename='export.pgm')
+    @render.download(filename=input.export_filename)
 
     def export_pgm():
         parser = ConfigParser()
