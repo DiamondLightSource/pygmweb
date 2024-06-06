@@ -72,6 +72,7 @@ app_ui = ui.page_sidebar(
         ui.accordion(
             ui.accordion_panel(
                 "Offsets Configurations" ,
+                ui.tags.a("Offsets definitions", href="https://pgmweb.diamond.ac.uk/tutorial.html#offsets", target="_blank"),
                 ui.input_numeric('beam_vertical_offset', "Beam Vertical Offset \(b\) (mm) " , -13, min=-100, max=100),
                 ui.input_numeric('mirror_horizontal_offset', "Mirror Horizontal Offset \(a\) (mm)", 0, min=-100, max=100),
                 ui.input_checkbox("calculate_offsets", "Calculate Offsets Automatically", value=False),
@@ -92,7 +93,7 @@ app_ui = ui.page_sidebar(
 
 
     ui.card(ui.card_header("Footprint View", "  ", ui.tooltip(icon_svg('circle-info'),"Beam footprint size", id='beamfootprint_tooltip')),output_widget("top_view"),full_screen=True),
-    ui.card(ui.card_header("Side View", " ", ui.tooltip(icon_svg('circle-info'),ui.output_ui('side_view_angles'), id='angle_tooltip')),output_widget("side_view"),full_screen=True, fill=True),
+    ui.card(ui.card_header("Side View", " ", ui.tooltip(icon_svg('circle-info'),ui.output_ui('side_view_angles'), id='angle_tooltip')),output_widget("side_view"),full_screen=True, fill=False),
 
     ui.include_css(app_dir / "styles.css"),
     ui.tags.head(ui.tags.script(src="https://polyfill.io/v3/polyfill.min.js?features=es6"),
@@ -225,7 +226,15 @@ def server(input, output, session):
             grating_int_3[0].to_point(),
             grating_int_4[0].to_point()
         ]
-
+        _ = pgm.propagate(pgm.rays)
+        ray2z = [pgm.rays[1].position.list[2],
+                pgm.mirror_intercept[1].z,
+                pgm.grating_intercept[1].z,
+                1000]
+        ray3z  = [pgm.rays[2].position.list[2],
+                pgm.mirror_intercept[2].z,
+                pgm.grating_intercept[2].z,
+                1000]
         mirror_footprint_width, mirror_footprint_height = pgm.calc_footprint_size(mirror_intercepts)
         grating_footprint_width, grating_footprint_height = pgm.calc_footprint_size(grating_intercepts)
         ui.update_tooltip("beamfootprint_tooltip", f"Mirror Footprint Size: {mirror_footprint_width:.3f} mm x {mirror_footprint_height:.3f} mm \n Grating Footprint Size: {grating_footprint_width:.3f} mm x {grating_footprint_height:.3f} mm")
@@ -254,14 +263,22 @@ def server(input, output, session):
         grating_footprint_corners = grating_footprint_corners + offset
 
         fig = go.Figure(layout={'showlegend':True, 
-                                'xaxis':{'range':(min(mirror_corners[:,0])-50,max(grating_corners[:,0])+50)},
-                                'yaxis':{'range':(min(mirror_corners[:,1])-50,max(grating_corners[:,1])+50)}, 
-                                'height':400})
+                                'xaxis':{'range':(min(ray3z[1:])-50,max(ray2z[1:-1])+50)}, 
+                                'height':500})
         fig.add_trace(go.Scatter(x=mirror_corners[:,0], y=mirror_corners[:,1],fill='toself',fillcolor='red',line={"color":'red'}, marker={'size':0}, name='Mirror', hovertemplate='%{x:.2f} mm, %{y:.2f} mm'))
         fig.add_trace(go.Scatter(x=grating_corners[:,0], y=grating_corners[:,1],fill='toself',fillcolor='blue',line={"color":'blue'}, marker={'size':0}, name='Grating', hovertemplate='%{x:.2f} mm, %{y:.2f} mm'))
         fig.add_trace(go.Scatter(x=mirr_footprint_corners[:,0], y=mirr_footprint_corners[:,1],fill='toself',fillcolor='green',line={"color":'green'}, marker={'size':0}, name='Beam', hovertemplate='%{x:.2f} mm, %{y:.2f} mm'))
         fig.add_trace(go.Scatter(x=grating_footprint_corners[:,0], y=grating_footprint_corners[:,1],fill='toself',fillcolor='green',line={"color":'green'}, marker={'size':0}, showlegend=False,name='Beam', hovertemplate='%{x:.2f} mm, %{y:.2f} mm'))
+        fig.update_yaxes(scaleanchor="x",scaleratio=1,)
+
         fig.update_layout(xaxis_title="Z (mm)", yaxis_title="X (mm)")
+        fig.update_layout(legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="right",
+        x=0.18))
+
         return fig
 
     @render_plotly
@@ -350,7 +367,7 @@ def server(input, output, session):
                 pgm.grating_intercept[2].y + 1000*pgm.rays[2].vector[1]]
         
 
-        fig = go.Figure(layout={'showlegend':False, 'xaxis':{'range':(min(ray3z[1:])-50,max(ray2z[1:-1])+50),}, 'height':1000})
+        fig = go.Figure(layout={'showlegend':True, 'xaxis':{'range':(min(ray3z[1:])-50,max(ray2z[1:-1])+50),}, 'height':500})
         fig.add_trace(go.Scatter(x=mirror_z, y=mirror_x,fill='toself',fillcolor='red',line={"color":'red'}, marker={'size':0}, name='Mirror', hovertemplate='%{x:.2f} mm, %{y:.2f} mm'))
         fig.add_trace(go.Scatter(x=grating_z, y=grating_x,fill='toself',fillcolor='blue',line={"color":'blue'}, marker={'size':0}, name='Grating', hovertemplate='%{x:.2f} mm, %{y:.2f} mm')) #mode lines if to hide vertices
         fig.update_yaxes(scaleanchor="x",scaleratio=1,)
@@ -359,7 +376,12 @@ def server(input, output, session):
         fig.add_trace(go.Scatter(x=ray2z, y = ray2x, line={'color':'green', 'width':1.5}, hovertemplate='%{x:.2f} mm, %{y:.2f} mm', name='Upper Ray'))
         fig.add_trace(go.Scatter(x=ray3z, y = ray3x, line={'color':'green', 'width':1.5}, hovertemplate='%{x:.2f} mm, %{y:.2f} mm', name='Lower Ray'))
         fig.update_layout(xaxis_title="Z (mm)", yaxis_title="X (mm)")
-        
+        fig.update_layout(legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="left",
+        x=0.18))
         return fig
     @render.ui
     @reactive.event(input.angle_tooltip)
