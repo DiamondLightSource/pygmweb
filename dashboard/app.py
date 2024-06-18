@@ -122,7 +122,7 @@ def server(input, output, session):
         if input.calc_beam_height():
             return ui.TagList(
                 ui.input_numeric('electron_size', " Vertical Electron Beam Size RMS (um)", 50, min=0),
-                ui.input_numeric('electron_divergence', "Electron Beam Vertical Divergence RMS (urad)", 20, min=0),
+                ui.input_numeric('electron_divergence', "Vertical Electron Beam Divergence RMS (urad)", 20, min=0),
                 ui.input_numeric('distance_to_mirror', "Distance to Image Plane (m)", 15, min=0),
                 ui.input_numeric('length_of_id', "Length of ID (m)", 2, min=0),
                 ui.input_numeric('num_of_sigmas', "Number of Sigmas", 5, min=0),
