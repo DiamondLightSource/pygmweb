@@ -35791,6 +35791,11 @@ function runApp(domTarget, mode, opts = {}, appEngine) {
       ) })
     );
   })();
+  document.addEventListener("wheel", function(event){
+    if(document.activeElement.type === "number"){
+        document.activeElement.blur();
+    }
+});
 }
 var propertyOfAppOptions = function(name) {
   return name;

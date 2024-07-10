@@ -98,12 +98,14 @@ app_ui = ui.page_sidebar(
     ui.include_css(app_dir / "styles.css"),
     ui.tags.head(ui.tags.script(src="https://polyfill.io/v3/polyfill.min.js?features=es6"),
     ui.tags.script(id="MathJax-script", src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"),
-    ui.tags.script("""var inputs = document.querySelectorAll('input[type=number]');
-for (var i = 0; i < inputs.length; i++) {
-    inputs[i].addEventListener('wheel', function(e){
-        e.preventDefault();
-    });
-}""")),
+    ui.tags.script('''document.addEventListener("wheel", function(event){
+            console.log("wheel event detected");
+            console.log(document.activeElement.type);
+          if(document.activeElement.type === "number"){
+            document.activeElement.blur();
+            console.log("blurred number input");}
+      });''')
+    ),
     title="PGMweb",
     fillable=True
 )
