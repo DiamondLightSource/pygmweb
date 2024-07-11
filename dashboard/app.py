@@ -16,6 +16,11 @@ E = 1.602176634e-19
 C = 299792458
 
 to_wavelength = lambda x: H*C/(E*x)
+undulator_dict = {'electron_size':50, 
+                    'electron_divergence': 20 , 
+                    'distance_to_mirror': 15, 
+                    'length_of_id': 2, 
+                    'num_of_sigmas': 5}
 app_ui = ui.page_sidebar(
     ui.sidebar(
         ui.layout_column_wrap(
@@ -97,7 +102,16 @@ app_ui = ui.page_sidebar(
 
     ui.include_css(app_dir / "styles.css"),
     ui.tags.head(ui.tags.script(src="https://polyfill.io/v3/polyfill.min.js?features=es6"),
-    ui.tags.script(id="MathJax-script", src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js")),
+    ui.tags.script(id="MathJax-script", src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"),
+    ui.tags.script('''
+            document.addEventListener("wheel", function(event){
+            console.log("wheel event detected");
+            console.log(document.activeElement.type);
+          if(document.activeElement.type === "number"){
+            document.activeElement.blur();
+            console.log("blurred number input");}
+      });''')
+    ),
     title="PGMweb",
     fillable=True
 )
@@ -114,6 +128,11 @@ def server(input, output, session):
                                   float(input.distance_to_mirror()), 
                                   float(input.length_of_id()), 
                                   num_of_sigmas = float(input.num_of_sigmas()))
+        undulator_dict.update({'electron_size': float(input.electron_size()), 
+                          'electron_divergence': float(input.electron_divergence()), 
+                          'distance_to_mirror': float(input.distance_to_mirror()), 
+                          'length_of_id': float(input.length_of_id()), 
+                          'num_of_sigmas': float(input.num_of_sigmas())})
         return rf"Beam Height : {beamsize:.3f} mm"
 
     @render.ui
@@ -121,11 +140,11 @@ def server(input, output, session):
     def beam_height_calc_ui():
         if input.calc_beam_height():
             return ui.TagList(
-                ui.input_numeric('electron_size', " Vertical Electron Beam Size RMS (um)", 50, min=0),
-                ui.input_numeric('electron_divergence', "Vertical Electron Beam Divergence RMS (urad)", 20, min=0),
-                ui.input_numeric('distance_to_mirror', "Distance to Image Plane (m)", 15, min=0),
-                ui.input_numeric('length_of_id', "Length of ID (m)", 2, min=0),
-                ui.input_numeric('num_of_sigmas', "Number of Sigmas", 5, min=0),
+                ui.input_numeric('electron_size', " Vertical Electron Beam Size RMS (um)", undulator_dict['electron_size'], min=0),
+                ui.input_numeric('electron_divergence', "Vertical Electron Beam Divergence RMS (urad)", undulator_dict['electron_divergence'], min=0),
+                ui.input_numeric('distance_to_mirror', "Distance to Image Plane (m)", undulator_dict['distance_to_mirror'], min=0),
+                ui.input_numeric('length_of_id', "Length of ID (m)", undulator_dict['length_of_id'], min=0),
+                ui.input_numeric('num_of_sigmas', "Number of Sigmas", undulator_dict['num_of_sigmas'], min=0),
                 ui.output_text("beam_size_mirror"),)
         else:
             return ui.input_numeric("beam_height", "Beam Height (mm)", 5,step=0.1,min=0, max=100)
